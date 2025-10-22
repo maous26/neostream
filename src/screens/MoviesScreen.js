@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, TextInput, ScrollView } from 'react-native';
 import { xtreamService } from '../services/XtreamCodesService';
-import { StorageService } from '../services';
+import { StorageService, categoryService } from '../services';
 
 const MoviesScreen = ({ navigation }) => {
   const [movies, setMovies] = useState([]);
+  const [enrichedMovies, setEnrichedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('Tout');
+  const [genres, setGenres] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState('Tout');
+  const [selectedYear, setSelectedYear] = useState('Tout');
+  const [minRating, setMinRating] = useState(0);
   const [error, setError] = useState(null);
   const [displayLimit, setDisplayLimit] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name'); // 'name', 'rating', 'year'
 
   useEffect(() => {
     loadMovies();
@@ -41,9 +45,20 @@ const MoviesScreen = ({ navigation }) => {
       
       setMovies(movieList);
       
-      // Extract unique categories
-      const cats = ['Tout', ...new Set(movieList.map(m => m.category || 'Films'))];
-      setCategories(cats);
+      // Enrichir avec CategoryService
+      console.log('🎯 Classification intelligente des films...');
+      const enriched = movieList.map(m => categoryService.categorizeMovie(m));
+      setEnrichedMovies(enriched);
+      
+      // Extraire tous les genres uniques
+      const allGenres = new Set();
+      enriched.forEach(movie => {
+        movie.genres.forEach(genre => allGenres.add(genre));
+      });
+      const sortedGenres = Array.from(allGenres).sort();
+      setGenres(['Tout', ...sortedGenres]);
+      
+      console.log(`✨ ${enriched.length} films enrichis dans ${sortedGenres.length} genres`);
       
       setLoading(false);
     } catch (error) {
@@ -53,67 +68,110 @@ const MoviesScreen = ({ navigation }) => {
     }
   };
 
-  // Filter by category
-  let filteredMovies = selectedCategory === 'Tout' 
-    ? movies 
-    : movies.filter(m => (m.category || 'Films') === selectedCategory);
+  // Utiliser les films enrichis si disponibles
+  const moviesToDisplay = enrichedMovies.length > 0 ? enrichedMovies : movies;
+
+  // Filter by genre
+  let filteredMovies = selectedGenre === 'Tout' 
+    ? moviesToDisplay 
+    : moviesToDisplay.filter(m => m.genres.includes(selectedGenre));
+  
+  // Filter by year
+  if (selectedYear !== 'Tout') {
+    filteredMovies = filteredMovies.filter(m => m.year && m.year.includes(selectedYear));
+  }
+  
+  // Filter by rating
+  if (minRating > 0) {
+    filteredMovies = categoryService.filterByRating(filteredMovies, minRating);
+  }
   
   // Filter by search
   if (searchQuery.trim()) {
-    filteredMovies = filteredMovies.filter(m => 
-      m.name.toLowerCase().includes(searchQuery.toLowerCase())
+    filteredMovies = categoryService.search(
+      filteredMovies.map(m => ({ ...m, cleanName: m.cleanName || m.name })),
+      searchQuery
     );
   }
+  
+  // Sort
+  filteredMovies = [...filteredMovies].sort((a, b) => {
+    if (sortBy === 'rating') {
+      return (b.imdbRating || 0) - (a.imdbRating || 0);
+    } else if (sortBy === 'year') {
+      return (b.year || '').localeCompare(a.year || '');
+    } else {
+      return (a.cleanName || a.name).localeCompare(b.cleanName || b.name);
+    }
+  });
   
   // Limit for performance
   const displayedMovies = filteredMovies.slice(0, displayLimit);
   const hasMore = filteredMovies.length > displayLimit;
 
-  const renderMovie = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.movieCard}
-      onPress={() => navigation.navigate('Player', { 
-        channel: {
-          id: item.id,
-          name: item.name,
-          url: item.streamUrl,
-          category: item.category,
-          logo: item.cover,
-          emoji: '🎬',
-          quality: 'VOD',
-        }
-      })}
-    >
-      {item.cover ? (
-        <Image 
-          source={{ uri: item.cover }} 
-          style={styles.movieCover}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.moviePlaceholder}>
-          <Text style={styles.placeholderText}>🎬</Text>
+  const renderMovie = ({ item }) => {
+    const displayName = item.cleanName || item.name;
+    const rating = item.imdbRating || (item.rating ? parseFloat(item.rating) : null);
+    const qualityBadge = item.quality && item.quality !== 'SD' ? item.quality : null;
+    
+    return (
+      <TouchableOpacity 
+        style={styles.movieCard}
+        onPress={() => navigation.navigate('Player', { 
+          channel: {
+            id: item.id,
+            name: displayName,
+            url: item.streamUrl,
+            category: item.category,
+            logo: item.cover,
+            emoji: '🎬',
+            quality: 'VOD',
+          }
+        })}
+      >
+        {item.cover ? (
+          <Image 
+            source={{ uri: item.cover }} 
+            style={styles.movieCover}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.moviePlaceholder}>
+            <Text style={styles.placeholderText}>🎬</Text>
+          </View>
+        )}
+        <View style={styles.movieInfo}>
+          <Text style={styles.movieName} numberOfLines={2}>{displayName}</Text>
+          <View style={styles.movieMeta}>
+            {item.year && <Text style={styles.movieYear}>📅 {item.year.substring(0, 4)}</Text>}
+            {rating && <Text style={styles.movieRating}>⭐ {rating.toFixed(1)}</Text>}
+          </View>
+          {item.genres && item.genres.length > 0 && (
+            <Text style={styles.movieGenres} numberOfLines={1}>
+              {item.genres.slice(0, 2).join(' · ')}
+            </Text>
+          )}
+          {qualityBadge && (
+            <View style={styles.qualityBadge}>
+              <Text style={styles.qualityText}>{qualityBadge}</Text>
+            </View>
+          )}
         </View>
-      )}
-      <View style={styles.movieInfo}>
-        <Text style={styles.movieName} numberOfLines={2}>{item.name}</Text>
-        {item.year && <Text style={styles.movieYear}>{item.year}</Text>}
-        {item.rating && <Text style={styles.movieRating}>⭐ {item.rating}</Text>}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
-  const renderCategory = ({ item }) => (
+  const renderGenre = ({ item }) => (
     <TouchableOpacity
       style={[
-        styles.categoryButton,
-        selectedCategory === item && styles.categoryButtonActive
+        styles.genreButton,
+        selectedGenre === item && styles.genreButtonActive
       ]}
-      onPress={() => setSelectedCategory(item)}
+      onPress={() => setSelectedGenre(item)}
     >
       <Text style={[
-        styles.categoryText,
-        selectedCategory === item && styles.categoryTextActive
+        styles.genreText,
+        selectedGenre === item && styles.genreTextActive
       ]}>
         {item}
       </Text>
@@ -173,17 +231,80 @@ const MoviesScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* Categories */}
-      {categories.length > 0 && (
+      {/* Genres */}
+      {genres.length > 0 && (
         <FlatList
           horizontal
-          data={categories}
-          renderItem={renderCategory}
+          data={genres}
+          renderItem={renderGenre}
           keyExtractor={(item) => item}
-          style={styles.categoryList}
+          style={styles.genreList}
           showsHorizontalScrollIndicator={false}
         />
       )}
+
+      {/* Filters */}
+      <ScrollView 
+        horizontal 
+        style={styles.filtersContainer}
+        showsHorizontalScrollIndicator={false}
+      >
+        {/* Sort by */}
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Tri:</Text>
+          {['name', 'rating', 'year'].map(sort => (
+            <TouchableOpacity
+              key={sort}
+              style={[styles.filterButton, sortBy === sort && styles.filterButtonActive]}
+              onPress={() => setSortBy(sort)}
+            >
+              <Text style={[styles.filterButtonText, sortBy === sort && styles.filterButtonTextActive]}>
+                {sort === 'name' ? '📝 Nom' : sort === 'rating' ? '⭐ Note' : '📅 Année'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Year filter */}
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Année:</Text>
+          {['Tout', '2024', '2023', '2022', '2021', '2020'].map(year => (
+            <TouchableOpacity
+              key={year}
+              style={[styles.filterButton, selectedYear === year && styles.filterButtonActive]}
+              onPress={() => setSelectedYear(year)}
+            >
+              <Text style={[styles.filterButtonText, selectedYear === year && styles.filterButtonTextActive]}>
+                {year}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Rating filter */}
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Note min:</Text>
+          {[0, 6, 7, 8].map(rating => (
+            <TouchableOpacity
+              key={rating}
+              style={[styles.filterButton, minRating === rating && styles.filterButtonActive]}
+              onPress={() => setMinRating(rating)}
+            >
+              <Text style={[styles.filterButtonText, minRating === rating && styles.filterButtonTextActive]}>
+                {rating === 0 ? 'Tout' : `${rating}+`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Stats */}
+      <Text style={styles.statsText}>
+        📊 {displayedMovies.length} film{displayedMovies.length > 1 ? 's' : ''}
+        {selectedGenre !== 'Tout' && ` · ${selectedGenre}`}
+        {selectedYear !== 'Tout' && ` · ${selectedYear}`}
+        {minRating > 0 && ` · ${minRating}+ ⭐`}
+      </Text>
 
       {/* Movies Grid */}
       <FlatList
@@ -237,6 +358,19 @@ const styles = StyleSheet.create({
   searchIcon: { fontSize: 20, marginRight: 10 },
   searchInput: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 12 },
   clearIcon: { fontSize: 24, color: '#64748b', paddingHorizontal: 10 },
+  genreList: { maxHeight: 70, paddingHorizontal: 10, marginVertical: 10 },
+  genreButton: { backgroundColor: '#1e293b', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, marginHorizontal: 6 },
+  genreButtonActive: { backgroundColor: '#06b6d4' },
+  genreText: { color: '#cbd5e1', fontWeight: '700', fontSize: 14 },
+  genreTextActive: { color: '#fff', fontWeight: '900' },
+  filtersContainer: { maxHeight: 50, paddingHorizontal: 20, marginBottom: 10 },
+  filterGroup: { flexDirection: 'row', alignItems: 'center', marginRight: 20 },
+  filterLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '700', marginRight: 8 },
+  filterButton: { backgroundColor: '#1e293b', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 6 },
+  filterButtonActive: { backgroundColor: '#06b6d4' },
+  filterButtonText: { color: '#94a3b8', fontSize: 12, fontWeight: '700' },
+  filterButtonTextActive: { color: '#fff', fontWeight: '900' },
+  statsText: { color: '#64748b', fontSize: 13, fontWeight: '600', paddingHorizontal: 20, marginBottom: 10 },
   categoryList: { maxHeight: 70, paddingHorizontal: 10, marginVertical: 15 },
   categoryButton: { backgroundColor: '#1e293b', paddingHorizontal: 25, paddingVertical: 15, borderRadius: 25, marginHorizontal: 8 },
   categoryButtonActive: { backgroundColor: '#06b6d4' },
@@ -273,10 +407,37 @@ const styles = StyleSheet.create({
     color: '#fff', 
     marginBottom: 5 
   },
+  movieMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   movieYear: { 
-    fontSize: 12, 
+    fontSize: 11, 
     color: '#94a3b8', 
-    marginBottom: 3 
+    marginRight: 8,
+  },
+  movieRating: { 
+    fontSize: 11, 
+    color: '#fbbf24', 
+    fontWeight: '700' 
+  },
+  movieGenres: { 
+    fontSize: 10, 
+    color: '#64748b',
+    marginBottom: 5,
+  },
+  qualityBadge: { 
+    backgroundColor: '#06b6d4', 
+    paddingHorizontal: 6, 
+    paddingVertical: 2, 
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  qualityText: { 
+    color: '#fff', 
+    fontSize: 9, 
+    fontWeight: '900' 
   },
   movieRating: { 
     fontSize: 12, 

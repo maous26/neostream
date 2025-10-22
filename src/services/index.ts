@@ -7,3 +7,7 @@ export type { XtreamCredentials, Channel, Movie, Series, Episode } from './Xtrea
 export { logoService } from './LogoService';
 export type { Logo } from './LogoService';
 export { default as CacheService } from './CacheService';
+export { categoryService } from './CategoryService';
+export type { Category, EnrichedChannel, EnrichedMovie, EnrichedSeries } from './CategoryService';
+export { tmdbService } from './TMDBService';
+export type { TMDBMovieDetails, TMDBSeriesDetails } from './TMDBService';

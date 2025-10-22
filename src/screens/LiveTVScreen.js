@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, TextInput } from 'react-native';
 import { xtreamService } from '../services/XtreamCodesService';
-import { StorageService } from '../services';
+import { StorageService, categoryService } from '../services';
 
 const LiveTVScreen = ({ navigation }) => {
   const [channels, setChannels] = useState([]);
+  const [enrichedChannels, setEnrichedChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Tout');
+  const [selectedQuality, setSelectedQuality] = useState('Tout');
   const [error, setError] = useState(null);
   const [displayLimit, setDisplayLimit] = useState(100);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,9 +40,17 @@ const LiveTVScreen = ({ navigation }) => {
       
       setChannels(channelList);
       
-      // Extract unique categories
-      const cats = ['Tout', ...new Set(channelList.map(ch => ch.category || 'Autre'))];
-      setCategories(cats);
+      // Enrichir avec CategoryService (nettoyage, catégorisation intelligente)
+      console.log('🎯 Classification intelligente des chaînes...');
+      const enriched = channelList.map(ch => categoryService.categorizeChannel(ch));
+      setEnrichedChannels(enriched);
+      
+      // Extraire les catégories uniques triées
+      const uniqueCats = new Set(enriched.map(ch => ch.category));
+      const sortedCats = Array.from(uniqueCats).sort();
+      setCategories(['Tout', ...sortedCats]);
+      
+      console.log(`✨ ${enriched.length} chaînes enrichies dans ${sortedCats.length} catégories`);
       
       setLoading(false);
     } catch (error) {
@@ -50,15 +60,24 @@ const LiveTVScreen = ({ navigation }) => {
     }
   };
 
+  // Utiliser les chaînes enrichies si disponibles
+  const channelsToDisplay = enrichedChannels.length > 0 ? enrichedChannels : channels;
+
   // Filter by category
   let filteredChannels = selectedCategory === 'Tout' 
-    ? channels 
-    : channels.filter(ch => (ch.category || 'Autre') === selectedCategory);
+    ? channelsToDisplay 
+    : channelsToDisplay.filter(ch => ch.category === selectedCategory);
   
-  // Filter by search
+  // Filter by quality
+  if (selectedQuality !== 'Tout') {
+    filteredChannels = filteredChannels.filter(ch => ch.quality === selectedQuality);
+  }
+  
+  // Filter by search (utilise cleanName si disponible)
   if (searchQuery.trim()) {
-    filteredChannels = filteredChannels.filter(ch => 
-      ch.name.toLowerCase().includes(searchQuery.toLowerCase())
+    filteredChannels = categoryService.search(
+      filteredChannels.map(ch => ({ ...ch, cleanName: ch.cleanName || ch.name })),
+      searchQuery
     );
   }
   
@@ -66,31 +85,43 @@ const LiveTVScreen = ({ navigation }) => {
   const displayedChannels = filteredChannels.slice(0, displayLimit);
   const hasMore = filteredChannels.length > displayLimit;
 
-  const renderChannel = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.channelCard}
-      onPress={() => navigation.navigate('Player', { channel: item })}
-    >
-      {item.logo ? (
-        <Image 
-          source={{ uri: item.logo }} 
-          style={styles.channelLogo}
-          resizeMode="contain"
-        />
-      ) : (
-        <View style={styles.channelEmoji}>
-          <Text style={styles.emojiText}>{item.emoji || '📺'}</Text>
+  const renderChannel = ({ item }) => {
+    const displayName = item.cleanName || item.name;
+    const qualityBadge = item.quality && item.quality !== 'SD' ? item.quality : null;
+    
+    return (
+      <TouchableOpacity 
+        style={styles.channelCard}
+        onPress={() => navigation.navigate('Player', { channel: item })}
+      >
+        {item.logo ? (
+          <Image 
+            source={{ uri: item.logo }} 
+            style={styles.channelLogo}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.channelEmoji}>
+            <Text style={styles.emojiText}>{item.emoji || '📺'}</Text>
+          </View>
+        )}
+        <View style={styles.channelInfo}>
+          <Text style={styles.channelName} numberOfLines={1}>{displayName}</Text>
+          <View style={styles.channelMeta}>
+            <Text style={styles.channelCategory}>{item.category || 'Général'}</Text>
+            {qualityBadge && (
+              <View style={styles.qualityBadge}>
+                <Text style={styles.qualityText}>{qualityBadge}</Text>
+              </View>
+            )}
+          </View>
         </View>
-      )}
-      <View style={styles.channelInfo}>
-        <Text style={styles.channelName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.channelCategory}>{item.category || 'Général'}</Text>
-      </View>
-      <View style={styles.playButton}>
-        <Text style={styles.playText}>▶</Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.playButton}>
+          <Text style={styles.playText}>▶</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderCategory = ({ item }) => (
     <TouchableOpacity
@@ -174,6 +205,35 @@ const LiveTVScreen = ({ navigation }) => {
         />
       )}
 
+      {/* Quality Filter */}
+      <View style={styles.qualityFilter}>
+        <Text style={styles.filterLabel}>Qualité:</Text>
+        {['Tout', 'HD', 'FHD', '4K'].map(quality => (
+          <TouchableOpacity
+            key={quality}
+            style={[
+              styles.qualityButton,
+              selectedQuality === quality && styles.qualityButtonActive
+            ]}
+            onPress={() => setSelectedQuality(quality)}
+          >
+            <Text style={[
+              styles.qualityButtonText,
+              selectedQuality === quality && styles.qualityButtonTextActive
+            ]}>
+              {quality}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Stats */}
+      <Text style={styles.statsText}>
+        📊 {displayedChannels.length} chaîne{displayedChannels.length > 1 ? 's' : ''} 
+        {selectedCategory !== 'Tout' && ` · ${selectedCategory}`}
+        {selectedQuality !== 'Tout' && ` · ${selectedQuality}`}
+      </Text>
+
       {/* Channels */}
       <FlatList
         data={displayedChannels}
@@ -237,7 +297,17 @@ const styles = StyleSheet.create({
   emojiText: { fontSize: 32 },
   channelInfo: { flex: 1 },
   channelName: { fontSize: 18, fontWeight: '900', color: '#fff', marginBottom: 5 },
-  channelCategory: { fontSize: 14, color: '#94a3b8', fontWeight: '600' },
+  channelMeta: { flexDirection: 'row', alignItems: 'center' },
+  channelCategory: { fontSize: 14, color: '#94a3b8', fontWeight: '600', marginRight: 10 },
+  qualityBadge: { backgroundColor: '#06b6d4', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  qualityText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  qualityFilter: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginVertical: 10 },
+  filterLabel: { color: '#94a3b8', fontSize: 14, fontWeight: '700', marginRight: 10 },
+  qualityButton: { backgroundColor: '#1e293b', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, marginRight: 8 },
+  qualityButtonActive: { backgroundColor: '#06b6d4' },
+  qualityButtonText: { color: '#94a3b8', fontSize: 13, fontWeight: '700' },
+  qualityButtonTextActive: { color: '#fff', fontWeight: '900' },
+  statsText: { color: '#64748b', fontSize: 13, fontWeight: '600', paddingHorizontal: 20, marginBottom: 10 },
   playButton: { backgroundColor: '#06b6d4', width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
   playText: { color: '#fff', fontSize: 20 },
   loadMoreButton: { backgroundColor: '#06b6d4', padding: 20, margin: 20, borderRadius: 15, alignItems: 'center' },
