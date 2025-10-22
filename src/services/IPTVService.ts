@@ -56,10 +56,15 @@ export const IPTVService = {
 
       const m3uContent = await response.text();
       console.log('📄 Content length:', m3uContent.length);
+      console.log('📄 First 500 chars:', m3uContent.substring(0, 500));
       
       // Parse M3U content
       const channels = parseM3U(m3uContent);
       console.log('✅ Parsed channels:', channels.length);
+      
+      if (channels.length > 0) {
+        console.log('📺 Sample channel:', JSON.stringify(channels[0], null, 2));
+      }
       
       if (channels.length === 0) {
         throw new Error('No channels found in the playlist. Please check your M3U URL.');

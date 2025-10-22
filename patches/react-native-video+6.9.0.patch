@@ -1,0 +1,31 @@
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/DataSourceUtil.kt b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/DataSourceUtil.kt
+index 1234567..abcdefg 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/DataSourceUtil.kt
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/DataSourceUtil.kt
+@@ -16,6 +16,7 @@ import com.facebook.react.modules.network.CookieJarContainer
+ import com.facebook.react.modules.network.ForwardingCookieHandler
+ import com.facebook.react.modules.network.OkHttpClientProvider
+ import okhttp3.Call
++import okhttp3.OkHttpClient
+ import okhttp3.JavaNetCookieJar
+ 
+ object DataSourceUtil {
+@@ -57,10 +58,19 @@ object DataSourceUtil {
+         bandwidthMeter: DefaultBandwidthMeter?,
+         requestHeaders: Map<String, String>?
+     ): HttpDataSource.Factory {
+-        val client = OkHttpClientProvider.getOkHttpClient()
++        // Get the base client and configure it to follow redirects
++        val baseClient = OkHttpClientProvider.getOkHttpClient()
++        val client = baseClient.newBuilder()
++            .followRedirects(true)
++            .followSslRedirects(true)
++            .build()
++            
+         val container = client.cookieJar as CookieJarContainer
+         val handler = ForwardingCookieHandler(context)
+         container.setCookieJar(JavaNetCookieJar(handler))
++        
+         val okHttpDataSourceFactory = OkHttpDataSource.Factory(client as Call.Factory)
+             .setTransferListener(bandwidthMeter)
+ 

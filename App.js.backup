@@ -4,20 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import { StorageService } from './src/services';
 import PlayerScreen from './src/screens/PlayerScreen';
-import type { Channel } from './src/services/IPTVService';
+import { StorageService } from './src/services/StorageService';
 
-type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  Player: { channel: Channel };
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+  const [initialRoute, setInitialRoute] = useState(null);
 
   useEffect(() => {
     checkCredentials();

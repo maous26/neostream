@@ -1,0 +1,97 @@
+╔════════════════════════════════════════════════════════════════╗
+║           🚨 ACTION IMMÉDIATE REQUISE 🚨                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+📱 L'application a été relancée sur l'écran de connexion
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  ÉTAPE CRITIQUE - NE PAS SAUTER ⚠️
+
+Sur l'écran de connexion Android TV, VOUS DEVEZ:
+
+1. Vérifier le champ "Serveur" / "Server"
+   
+   ❌ S'il affiche: apsmarter.net
+   ✅ Changez en:    apsmarter.net:80
+                                 ^^^^
+                            AJOUTEZ LE PORT !
+
+2. Le champ "Username" doit être: 703985977790132
+3. Le champ "Password" doit être: 1593574628
+
+4. Cliquez sur "Se connecter" / "Connect"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 POURQUOI C'EST IMPORTANT ?
+
+Dans les logs précédents, on voyait:
+   URL: http://apsmarter.net/live/...
+                ^^^^^^^^^^^^^^^^
+              PAS DE PORT :80 !
+
+Il FAUT:
+   URL: http://apsmarter.net:80/live/...
+                ^^^^^^^^^^^^^^^^ ^^^
+                   AVEC :80 !
+
+Sans le port :80, le serveur refuse la connexion.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 CHECKLIST
+
+□ App ouverte sur écran de connexion
+□ Champ "Serveur" contient "apsmarter.net:80" (AVEC :80)
+□ Username: 703985977790132
+□ Password: 1593574628
+□ Cliqué sur "Se connecter"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 COMMENT AJOUTER LE PORT SUR ANDROID TV
+
+1. Naviguer au champ "Serveur" avec les flèches
+2. Appuyer sur "OK" / "Enter" pour éditer
+3. Aller à la fin du texte (flèche droite)
+4. Ajouter ":80"
+5. Appuyer sur "OK" pour valider
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 APRÈS LA CONNEXION
+
+Une fois connecté:
+1. Sélectionnez une chaîne
+2. Dans les logs vous verrez:
+   ```
+   🔗 URL initiale: http://apsmarter.net:80/live/...
+                                      ^^^^ PORT PRÉSENT
+   🔄 Résolution des redirections...
+   ✅ URL finale résolue: http://2.58.193.26:18089/...
+                          ^^^^^^^^^^^^^^^^^^^^^^
+                          URL DIFFÉRENTE AVEC TOKEN
+   ```
+
+3. La vidéo va se lancer ! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛠️ SI VOUS VOULEZ CONTRÔLER DEPUIS LE MAC
+
+Utilisez ce script pour taper depuis le Mac:
+```bash
+./adb-input-text.sh "apsmarter.net:80"
+```
+
+Ou contrôlez tout depuis le Mac:
+```bash
+./login-from-laptop.sh
+```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════╗
+║  ACTION: Ajoutez :80 au serveur et reconnectez-vous           ║
+╚════════════════════════════════════════════════════════════════╝
