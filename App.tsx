@@ -4,6 +4,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import LiveTVScreen from './src/screens/LiveTVScreen';
+import MoviesScreen from './src/screens/MoviesScreen';
+import SeriesScreen from './src/screens/SeriesScreen';
+import SeriesDetailsScreen from './src/screens/SeriesDetailsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import { StorageService } from './src/services';
 import PlayerScreen from './src/screens/PlayerScreen';
 import type { Channel } from './src/services/IPTVService';
@@ -11,6 +16,11 @@ import type { Channel } from './src/services/IPTVService';
 type RootStackParamList = {
   Login: undefined;
   Home: undefined;
+  LiveTV: undefined;
+  Movies: undefined;
+  Series: undefined;
+  SeriesDetails: { series: any; seriesInfo?: any };
+  Settings: undefined;
   Player: { channel: Channel };
 };
 
@@ -44,6 +54,11 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="LiveTV" component={LiveTVScreen} />
+        <Stack.Screen name="Movies" component={MoviesScreen} />
+        <Stack.Screen name="Series" component={SeriesScreen} />
+        <Stack.Screen name="SeriesDetails" component={SeriesDetailsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Player" component={PlayerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
