@@ -1,97 +1,120 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 📺 NeoStream - IPTV Player for Android TV
 
-# Getting Started
+<div align="center">
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+![React Native](https://img.shields.io/badge/React_Native-0.82-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Android TV](https://img.shields.io/badge/Android_TV-Leanback-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 
-## Step 1: Start Metro
+**A modern, fully-typed IPTV player for Android TV built with React Native and TypeScript**
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-documentation)
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+</div>
 
-```sh
-# Using npm
-npm start
+---
 
-# OR using Yarn
-yarn start
-```
+## ✨ Features
 
-## Step 2: Build and run your app
+### 🎯 Core Functionality
+- **M3U Playlist Support** - Parse and load IPTV channels from M3U playlists
+- **Full TypeScript** - Complete type safety throughout the application
+- **Android TV Optimized** - Native Leanback support with D-pad navigation
+- **Remote Control Ready** - Full TV remote control support
+- **Keyboard Input** - On-screen keyboard and laptop-to-TV input
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 🎨 User Interface
+- **Modern Neon Theme** - Beautiful cyberpunk-inspired UI
+- **Responsive Layout** - Optimized for TV screens
+- **Focus Management** - Intuitive navigation between UI elements
+- **Loading States** - Clear feedback during operations
+- **Error Handling** - User-friendly error messages
 
-### Android
+---
 
-```sh
-# Using npm
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/maous26/neostream.git
+cd neostream
+
+# Install dependencies
+npm install
+
+# Run on Android TV
 npm run android
 
-# OR using Yarn
-yarn android
+# Or use helper script
+./launch-app.sh
 ```
 
-### iOS
+---
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## 🎮 Usage
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### Login with Your IPTV Service
 
-```sh
-bundle install
+Enter your complete M3U URL:
+```
+http://server.com/get.php?username=USER&password=PASS&type=m3u
 ```
 
-Then, and every time you update your native dependencies, run:
+### Control from Your Laptop
 
-```sh
-bundle exec pod install
+```bash
+# Interactive login
+./login-from-laptop.sh
+
+# Send text
+./adb-input-text.sh "http://your-url.com/playlist.m3u"
+
+# Test URL
+./test-m3u-url.sh
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+---
 
-```sh
-# Using npm
-npm run ios
+## 📚 Documentation
 
-# OR using Yarn
-yarn ios
-```
+- **[LAPTOP_CONTROL_GUIDE.md](./LAPTOP_CONTROL_GUIDE.md)** - Control app from laptop
+- **[TV_REMOTE_GUIDE.md](./TV_REMOTE_GUIDE.md)** - TV remote navigation
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Problem solving
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🏗️ Tech Stack
 
-## Step 3: Modify your app
+- **React Native 0.82** - Cross-platform mobile framework
+- **TypeScript 5.8** - Type-safe JavaScript
+- **React Navigation** - Navigation library
+- **AsyncStorage** - Data persistence
+- **Android TV Leanback** - TV-optimized UI
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## 🐛 Common Issues
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+### "Network request failed"
+❌ Wrong: `http://server.com`  
+✅ Correct: `http://server.com/get.php?username=XXX&password=YYY&type=m3u`
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for more help.
 
-## Congratulations! :tada:
+---
 
-You've successfully run and modified your React Native App. :partying_face:
+## 📄 License
 
-### Now what?
+MIT License - see [LICENSE](LICENSE) file.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+---
 
-# Troubleshooting
+<div align="center">
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+**Made with ❤️ for IPTV enthusiasts**
 
-# Learn More
+⭐ Star this repo if you find it helpful!
 
-To learn more about React Native, take a look at the following resources:
+[Report Bug](https://github.com/maous26/neostream/issues) · [Request Feature](https://github.com/maous26/neostream/issues)
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+</div>
